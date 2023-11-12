@@ -18,12 +18,13 @@ const isLoading = ref(false);
 // Async Function to Fetch Data:
 // searchCountries: An asynchronous function that takes a query parameter. It sends a request to the Restcountries API based on the search query, updates the result and isLoading values accordingly.
 const searchCountries = async (query) => {
+  if (query.length < 3) {
+    return;
+  }
   result.value = [];
   try {
     isLoading.value = true;
-    const response = await fetch(
-      `https://restcountries.com/v3.1/name/${query}`
-    );
+    const response = await fetch(`https://restcountries.com/v3.1/name/${query}`);
     if (lodash.isArray(result.value)) {
       result.value = await response.json();
       isLoading.value = false;
@@ -32,13 +33,16 @@ const searchCountries = async (query) => {
     result.value = [];
     isLoading.value = false;
   }
-};
+}
+// Uses Lodash's debounce function to create a debounced version of searchCountries. It delays the execution of searchCountries by 500 milliseconds to avoid excessive API requests.
+const debouncedSearch = lodash.debounce(searchCountries, 500);
+
 </script>
 
 <template>
   <!-- v-model="msg": Binds the input field to the msg variable. The user's input will be stored in the msg variable. -->
   <!-- @keydown="searchCountries(msg)": Calls the searchCountries function when a key is pressed. This allows for real-time searching as the user types. -->
-  <input placeholder="search" v-model="msg" @keydown="searchCountries(msg)" />
+  <input placeholder="search" v-model="msg" @keydown="searchCountries(msg)" @input="debouncedSearch(msg)"/>
   <button @click="searchCountries(msg)">Search</button>
   <br />
   <h1>{{ msg }}</h1>
